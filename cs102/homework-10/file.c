@@ -1,51 +1,68 @@
 #include <stdio.h>
-#include <string.h>
 #include "maze.h"
 #include "file.h"
 
-void load(const char* filename) {
-FILE* f = fopen(filename, "r");
-if (!f) return;
+void load(char* filename)
+{
+	FILE* file;
+	char scratch[1024];
+	file = fopen( filename, "r");
+	clear_maze();
+	int i = 0;
+        int j = 0;
+	if (file != NULL)
+        {
+                while( fgets( scratch, 1024, file ) != NULL )
+                {
+                	if( sscanf( scratch, "WALL %d %d", &i, &j) == 2)
+                	{
+                        	build_wall(i,j);
+                	}
+			if( sscanf( scratch, "X %d", &i) == 1)
+                        {
+                                set_location_x(i);
+                        }
+                        if( sscanf( scratch, "Y %d", &j) == 1)
+                        {
+                                set_location_y(j);
+                        }
+                        if( sscanf( scratch, "TREASURE %d %d", &i, &j) == 2)
+                        {
+                                set_treasure_xy(i, j);
+                        }
+		}
+	}
+	fclose(file);
+}
 
-clear_maze();
-char line[256];
-int temp_x = -1, temp_y = -1;
-
-while (fgets(line, sizeof(line), f)) {
-int a, b;
-if (sscanf(line, "X %d", &a) == 1) {
-temp_x = a;
-} else if (sscanf(line, "Y %d", &b) == 1) {
-temp_y = b;
-if (temp_x != -1 && temp_y != -1) {
-set_player(temp_x, temp_y);
-temp_x = temp_y = -1;
-}
-} else if (sscanf(line, "TREASURE %d %d", &a, &b) == 2) {
-set_treasure(a,b);
-} else if (sscanf(line, "WALL %d %d", &a, &b) == 2) {
-build_wall(a, b);
-}
-}
-fclose(f);
-}
-
-void save(const char* filename) {
-FILE* f = fopen(filename, "w");
-if (!f) return;
-
-for (int y = 0; y < HEIGHT; y++) {
-for (int x = 0; x < WIDTH; x++) {
-if maze[y][x].wall) {
-fprintf(f, "WALL %d %d\n", x, y);
-}
-}
-}
-if (player_x != -1) fprintf(f, "X %d\n", player_x);
-if (player_y != -1) fprintf(f, "Y %d\n", player_y);
-if (has_treasure) {
-fprintf(f, "TREASURE %d %d\n", treausre_x, treasure_y);
-}
-fclose(f);
+void save(char* filename)
+{
+        FILE* file;
+	char savefile[1024];
+	file = fopen( filename, "w");
+        int i = 0;
+        int j = 0;
+	if(file != NULL)
+        {
+		for( j=0; j<10; j++ )
+        	{
+                	for( i=0; i<10; i++ )
+                        {
+                                if(is_wall(i,j) == 1)
+                                {
+                                        fprintf(file, "WALL %d %d\n", i, j);
+                                }
+                                if(is_treasure(i,j) == 1)
+                                {
+                                        fprintf(file, "TREASURE %d %d\n", i, j);
+                                }
+                        }
+                }
+        }
+	int new_x = get_location_x();
+        int new_y = get_location_y();
+	fprintf(file, "X %d\n", new_x);
+        fprintf(file, "Y %d\n", new_y);
+        fclose(file); 
 }
 

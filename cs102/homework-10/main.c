@@ -1,39 +1,80 @@
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 #include "maze.h"
 #include "file.h"
 
-int main(int argc, char** argv) {
-clear_maze();
-if (argc > 1) {
-load(argv[1]);
-}
-print_maze();
+int main ( int argc, char** argv)
+{
+	clear_maze();
 
-char input[256];
-char fname[256];
-int x, y;
+	fprintf(stdout, "\n");
+	fprintf(stdout,"type either l or r and hit enter to move left or right\n");
+	fprintf(stdout,"hit CTRL-D or CTRL-C to exit\n");
+	fprintf(stdout,"\n");
+	int i = 0;
+	int j = 0;
 
-while (fgets(input, sizeof(input), stdin)) {
-input[strcspn(input, "\n")] = 0;
+	char scratchpad[1024];
+	char savefile[1024];
+	if( argc > 1)
+	{
+		load(argv[1]);
+	}
+	print_maze();
+	while( fgets( scratchpad, 1024, stdin ) != NULL )
+  	{
+		if( sscanf( scratchpad, "save %s", savefile) == 1)
+		{
+			save(savefile);
+		}
+		else if( sscanf( scratchpad, "load %s", savefile) == 1)
+		{
+			load(savefile);
+		}
+		else if( scratchpad[0] == 'u')
+		{
+			move_up();
+		}
+		else if( scratchpad[0] == 'd')
+		{
+			move_down();
+		}
+		else if( scratchpad[0] == 'l')
+		{
+			move_left();
+		}
+		else if( scratchpad[0] == 'r')
+		{
+			move_right();
+		}
+		else if( sscanf( scratchpad, "x %d", &i) == 1)
+		{
+			set_location_x(i);
+		}
+		else if( sscanf( scratchpad, "y %d", &j) == 1)
+		{
+			set_location_y(j);
+		}
+		else if( sscanf( scratchpad, "wall %d %d", &i, &j) == 2)
+		{
+			build_wall(i,j);
+		}
+		else if( sscanf( scratchpad, "empty %d %d", &i, &j) == 2)
+		{
+			clear_wall(i,j);
+		}
+		else if( sscanf( scratchpad, "treasure %d %d", &i, &j) == 2)
+		{
+			set_treasure_xy(i,j);
+		}
+		if( is_treasure(get_location_x(), get_location_y()))
+		{
+			print_maze();
+			fprintf(stdout, "You Win!\n");
+			exit(0);
+		}
 
-if (input[0] == 'u') move_north();
-else if (input[0] == 'd') move_south();
-else if (input[0] == 'r') move_east();
-else if (input[0] == 'l') move_west();
-else if (sscanf(input, "wall %d %d", &x, &y) == 2) build_wall(x, y);
-else if (sscanf(input, "empty %d %d", &x, &y) == 2) clear_wall(x, y);
-else if (sscanf(input, "x %d %d", &x, &y) == 2) set_player(x, y);
-else if (sscanf(input, "load %s", fname) == 1) load(fname);
-else if (sscanf(input, "save %s", fname) == 1) save(fname);
-
-print_maze();
-
-if (check_win()) {
-printf("you found the treasure\n");
-break;
-}
-}
-return 0;
+		print_maze();
+	}
 }
 

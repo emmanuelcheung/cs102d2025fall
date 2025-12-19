@@ -1,6 +1,5 @@
-#ifndef FILE_H
-#define FILE_H
-void load(const char* filename);
-void save(const char* filename);
-#endif
+#include <stdio.h>
+
+
+void load(char* string);
 
