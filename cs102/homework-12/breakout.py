@@ -1,92 +1,86 @@
-from tkinter import *
-from intersect import *
+#!/usr/bin/python
 
+#Emmanuel Cheung
+#Homework 12 Final
+#12-19-2025
+
+from tkinter import *
+from intersect import hits
+from intersect import edges
+from intersect import intersect
 root = Tk()
 
 class MyCanvas(Canvas):
-	def __init__(this, *args, **kwargs):
-		Canvas.__init__(this, *args, **kwargs)
-		this.ball = this.makeBall(250, 100)
-		this.rectangle = this.makeRectangle(200, 475)
-		this.vx = 2
-		this.vy = 3
-		this.bind("<KeyPress>", this.keyWasPressed)
-		this.bind("<Motion>", this.mouseHasMoved)
-		this.focus_set()
+  def __init__( this, *args, **kwargs ):
+    Canvas.__init__( this, *args, **kwargs )
+    this.ball = this.makeBall( 50,50)
+    this.rectangle = this.makeRectangle (225, 475)
+    this.bind( "<KeyPress>", this.keyWasPressed)
+    this.focus_set()
+    this.ball_velocity_x = 1
+    this.ball_velocity_y = 1
+    this.bind("<Motion>", this.mouseHasMoved)
+    this.makeBlock( 150, 20)
+    this.makeBlock( 300, 200)
+    this.makeBlock( 50, 105)
+    this.makeBlock( 67, 67)
+    this.makeBlock( 213, 312)
 
-		this.makeBrickRow(y=30)
-		this.makeBrickRow(y=65)
-		this.makeBrickRow(y=100)
+  def makeBall( this, x, y, color="blue" ):
+    return this.create_oval( x, y, x+5, y+5, fill=color )
+  def makeRectangle( this, x, y, color="red" ):
+    return this.create_rectangle( x, y, x+50, y+10, fill=color )  
+  def mouseHasMoved(this, event):
+    sx, sy, ex, ey = this.coords( this.rectangle)
+    paddle_x = (sx+ex)/2
+    this.move(this.rectangle, event.x-paddle_x, 0)
+  def eachFrame(this):
+    sx, sy, ex, ey = this.coords(this.ball)
+    sxr, syr, exr, eyr = this.coords(this.rectangle)
+    #print(sx, sy, ex, ey)
+    if sx < 0 or ex > 500:
+      this.ball_velocity_x = -this.ball_velocity_x
+    if sy < 0 :
+      this.ball_velocity_y = -this.ball_velocity_y
+    if ex > sxr and sx < exr and ey > syr:
+#    if ey == sxr and sxr < sx < exr:
+      this.ball_velocity_y = -this.ball_velocity_y
+    if ey > 500:
+      print("you lose!")
+      raise Exception("you lose!")
+    this.move(this.ball, this.ball_velocity_x, this.ball_velocity_y)
 
-	def makeBall(this, x, y):
-		return this.create_oval(x, y, x+10, y+10, fill="white")
+    allBlocks = this.find_withtag("block")
+    for block in allBlocks:
+      bx, by, lx, ly = this.coords(block)
+      hcoords = hits(bx, by, lx, ly, sx, sy, ex, ey)
+      if "N" in hcoords:
+        this.ball_velocity_y = -abs(this.ball_velocity_y)
+      if "E" in hcoords:
+        this.ball_velocity_x = -abs(this.ball_velocity_x)
+      if "S" in hcoords:
+        this.ball_velocity_y = +abs(this.ball_velocity_y)
+      if "W" in hcoords:
+        this.ball_velocity_x = +abs(this.ball_velocity_x)
+      if hcoords:
+        this.delete( block)
+    if len(allBlocks) == 0:
+      raise Exception( "You Win!")
 
-	def makeRectangle(this, x, y):
-		return this.create_rectangle(x, y, x+100, y+15, fill="red")
+  def keyWasPressed( this, event=None):
+    key = event.keysym
+    sx, sy, ex, ey = this.coords(this.rectangle)
+    print( "just pressed:", key)
+    if key == "Left" and sx > 0:
+       this.move(this.rectangle, -25, 0)
+    if key == "Right" and ex < 500:
+       this.move(this.rectangle, 25, 0)  
+  def makeBlock( this, x, y, color="teal"):
+    return this.create_rectangle( x, y, x+50, y+10, fill=color, tags="block")
 
-	def makeBlock(this, x, y):
-		return this.create_rectangle(x, y, x+60, y+30, fill="lime", tags="block")
-
-	def makeBrickRow(this, y, num_blocks=5, spacing=10):
-		start_x = 80
-		brick_width = 60
-		
-		for i in range(num_blocks):
-			x = start_x + i * (brick_width + spacing)
-			this.makeBlock(x, y)
-
-	def keyWasPressed(this, event):
-		k = event.keysym
-		x1, _, x2, _ = this.coords(this.rectangle)
-		if k == "Left" and x1 > 0:
-			this.move(this.rectangle, -30, 0)
-		if k == "Right" and x2 < 500:
-			this.move(this.rectangle, 30, 0)
-
-	def mouseHasMoved(this, event):
-		x1, y1, x2, y2 = this.coords(this.rectangle)
-		this.move(this.rectangle, event.x - (x1 + x2) / 2, 0)
-
-	def eachFrame(this):
-		x1, y1, x2, y2 = this.coords(this.ball)
-	
-		if x1 <= 0 or x2 >= 500:
-			this.vx = -this.vx
-		if y1 <= 0:
-			this.vy = -this.vy
-		if y2 >= 500:
-			root.destroy()
-			return
-
-		px1, py1, px2, py2 = this.coords(this.rectangle)
-		if hits(x1, y1, x2, y2, px1, py1, px2, py2):
-			this.vy = -this.vy
-
-		for block in this.find_withtag("block"):
-			bx1, by1, bx2, by2 = this.coords(block)
-			sides = hits(bx1, by1, bx2, by2, x1, y1, x2, y2)
-			if sides:
-				this.delete(block)
-				
-				if 'N' in sides or 'S' in sides:
-					this.vy = -this.vy
-
-				if 'E' in sides or 'W' in sides:
-					this.vx = -this.vx
-
-		if not this.find_withtag("block"):
-			root.destroy()
-			return
-
-		this.move(this.ball, this.vx, this.vy)
-
-canvas = MyCanvas(root, width=500, height=500, bg="black")
+canvas = MyCanvas( root, width=500, height=500 )
 canvas.pack()
 
-try:
-	while True:
-		canvas.eachFrame()
-		root.update()
-except TclError:
-	pass
-
+while( True ):
+  canvas.eachFrame()
+  root.update()
